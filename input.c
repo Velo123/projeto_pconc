@@ -1,31 +1,51 @@
 #include"input.h"
 
-//char** input_directorys(char* filename){
+char** input_directorys(char* filename){
+    char directory[700],**directorys;
+    int n_images=0,i=0;
+    FILE *fin=fopen(filename,"r");
 
-//}
-
-gdImagePtr read_png_file(char * file_name){
-    FILE * fp;
-    gdImagePtr img;
-    fp = fopen(file_name, "rb");
-    if (!fp) {
-        
-    }
-    img=gdImageCreateFromPng(fp);
-    fclose(fp);
-    if (!img) {
+    if (fin==NULL){
+        printf("Error opening the file:%s",filename);
         return NULL;
     }
-    return img;
+    while (!feof(fin)){
+        fgets(directory,700,fin);
+        if(strstr(directory,".png")!=NULL){
+            n_images++;
+        }
+    }
+    
+    fseek(fin,0,SEEK_SET);
+
+    directorys=(char**)malloc((n_images+1)*sizeof(char*));
+    if (directorys==NULL){
+        fclose(fin);
+        return NULL;
+    }
+    directorys[n_images]=NULL;
+    
+    while (!feof(fin)){
+        fgets(directory,700,fin);
+        if(strstr(directory,".png")==NULL)
+            continue;
+        else{
+            directorys[i]=malloc((strlen(directory)+1)*sizeof(char));
+            if (directorys[i]==NULL){
+                fclose(fin);
+                free_directorys(directorys);
+            }
+            strcpy(directorys[i],directory);
+            i++;
+        }
+    }
+    fclose(fin);
+    return directorys;
 }
 
-int write_png_file(gdImagePtr write_img,char * file_name){
-    FILE * fp;
-    fp = fopen(file_name, "wb");
-    if (!fp) {
-        return 0;
-    }
-    gdImagePng(write_img, fp);
-    fclose(fp);
-    return 1;
- }
+void free_directorys(char** directorys){
+    int i;
+    for (i=0;directorys[i]!=NULL;i++)
+        free(directorys[i]);
+    free(directorys);
+}

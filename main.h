@@ -6,7 +6,7 @@
 #include"image-lib.h"
 #include"pthread.h"
 #include"gd.h"
-//#include"input.h"
+#include"input.h"
 
 int main (int argc, char *argv[]);
 char** input_directorys(char* filename);

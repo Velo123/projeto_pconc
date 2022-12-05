@@ -7,9 +7,7 @@
 #include"pthread.h"
 #include"gd.h"
 
-//char** input_directorys(char* filename);
-gdImagePtr read_png_file(char * file_name);
-int write_png_file(gdImagePtr write_img,char * file_name);
-
+char** input_directorys(char* filename);
+void free_directorys(char** directorys);
 
 #endif
