@@ -11,7 +11,7 @@ char** input_directorys(char* filename){
     }
     while (!feof(fin)){
         fgets(directory,700,fin);
-        if(strstr(directory,".png")!=NULL){
+        if(strstr(directory,".png")!=NULL && strcmp(directory,"watermark.png")!=0){
             n_images++;
         }
     }
@@ -27,7 +27,7 @@ char** input_directorys(char* filename){
     
     while (!feof(fin)){
         fgets(directory,700,fin);
-        if(strstr(directory,".png")==NULL)
+        if(strstr(directory,".png")==NULL || strcmp(directory,"watermark.png")==0)
             continue;
         else{
             directorys[i]=malloc((strlen(directory)+1)*sizeof(char));

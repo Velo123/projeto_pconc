@@ -7,6 +7,7 @@
 #include"pthread.h"
 #include"gd.h"
 #include"input.h"
+#include<unistd.h>
 
 int main (int argc, char *argv[]);
 char** input_directorys(char* filename);

@@ -1,11 +1,21 @@
-all: serial-basic
 
+#Makefile ap-paralelo-1
+CFLAGS  = -Wall -pedantic -g -lgd -pthread -lpthread
 
-serial-basic: serial-basic.c image-lib.c image-lib.h
-	gcc -Wall -pedantic serial-basic.c image-lib.c -g -o serial-basic -lgd
+default: all
 
+all:main.o image-lib.o input.o
+	gcc $(CFLAGS) -o ap-paralelo-1 main.o image-lib.o input.o
+
+main.o: main.c main.h
+	gcc  $(CFLAGS) -c main.c
+
+image-lib.o: image-lib.c image-lib.h
+	gcc  $(CFLAGS) -c image-lib.c
+
+input.o: input.c input.h
+	gcc  $(CFLAGS) -c input.c
+
+	
 clean:
-	rm serial-basic
-
-clean-data:
-	rm -fry ./Resize-dir ./Thumbnail-dir ./Watermark-dir
+	rm -rf *o all
