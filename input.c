@@ -6,7 +6,7 @@ char** input_directorys(char* filename){
     FILE *fin=fopen(filename,"r");
 
     if (fin==NULL){
-        printf("Error opening the file:%s",filename);
+        printf("Error opening the file:%s\n",filename);
         return NULL;
     }
     while (!feof(fin)){

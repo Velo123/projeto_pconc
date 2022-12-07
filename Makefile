@@ -1,11 +1,11 @@
 
 #Makefile ap-paralelo-1
-CFLAGS  = -Wall -pedantic -g -lgd -pthread -lpthread
+CFLAGS  = -Wall -pedantic -g -pthread -lpthread
 
 default: all
 
 all:main.o image-lib.o input.o
-	gcc $(CFLAGS) -o ap-paralelo-1 main.o image-lib.o input.o
+	gcc $(CFLAGS) -o ap-paralelo-1 main.o image-lib.o input.o -lgd
 
 main.o: main.c main.h
 	gcc  $(CFLAGS) -c main.c
