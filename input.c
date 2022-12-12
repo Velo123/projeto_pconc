@@ -10,7 +10,7 @@ char** input_directorys(char* filename){
         return NULL;
     }
     while (!feof(fin)){
-        fgets(directory,700,fin);
+        fscanf(fin,"%s\n",directory);
         if(strstr(directory,".png")!=NULL && strcmp(directory,"watermark.png")!=0){
             n_images++;
         }
@@ -26,7 +26,8 @@ char** input_directorys(char* filename){
     directorys[n_images]=NULL;
     
     while (!feof(fin)){
-        fgets(directory,700,fin);
+        fscanf(fin,"%s\n",directory);
+        printf("%s\n",directory);
         if(strstr(directory,".png")==NULL || strcmp(directory,"watermark.png")==0)
             continue;
         else{

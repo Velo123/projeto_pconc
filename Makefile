@@ -19,3 +19,4 @@ input.o: input.c input.h
 	
 clean:
 	rm -rf *o all
+	rm -rf *o ap-paralelo-1

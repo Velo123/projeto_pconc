@@ -8,9 +8,10 @@
 gdImagePtr wm;
 int v=0;
 char **dirs;
+pthread_mutex_t mutex;
 
 int main (int argc, char *argv[]){
-
+    pthread_mutex_init(&mutex,NULL);
     if(argc!=3){
         printf("Programa mal invocado\n");
         exit(EXIT_FAILURE);
@@ -55,7 +56,6 @@ int main (int argc, char *argv[]){
         free_directorys(dirs);
         exit(EXIT_FAILURE);
     }
-
     for (int i = 0; i < n_threads; i++)
     {
         pthread_create(&thread_id[i],NULL,ap1,NULL);
@@ -67,6 +67,7 @@ int main (int argc, char *argv[]){
     gdImageDestroy(wm);
     free_directorys(dirs);
     free(thread_id);
+    pthread_mutex_destroy(&mutex);
 }
 
 void *ap1(void *arg){
@@ -76,8 +77,10 @@ void *ap1(void *arg){
 
 
     while(dirs[v]!=NULL){
+        pthread_mutex_lock(&mutex);
         vl=v;
         v++;
+        pthread_mutex_unlock(&mutex);
         wm_img=NULL;
         rszd_img=NULL;
         thumb_img=NULL;
