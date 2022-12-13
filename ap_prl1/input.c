@@ -27,7 +27,6 @@ char** input_directorys(char* filename){
     
     while (!feof(fin)){
         fscanf(fin,"%s\n",directory);
-        printf("%s\n",directory);
         if(strstr(directory,".png")==NULL || strcmp(directory,"watermark.png")==0)
             continue;
         else{

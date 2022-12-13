@@ -1,4 +1,4 @@
-#include "main.h"
+#include "ap_paralelo1_main.h"
 
 /* the directories wher output files will be placed */
 #define RESIZE_DIR "./Resize-dir/"
@@ -34,21 +34,25 @@ int main (int argc, char *argv[]){
 	/* creation of output directories */
 	if (create_directory(RESIZE_DIR) == 0){
 		fprintf(stderr, "Impossible to create %s directory\n", RESIZE_DIR);
-		exit(-1);
+		free_directorys(dirs);
+        exit(EXIT_FAILURE); 
 	}
 	if (create_directory(THUMB_DIR) == 0){
 		fprintf(stderr, "Impossible to create %s directory\n", THUMB_DIR);
-		exit(-1);
+		free_directorys(dirs);
+        exit(EXIT_FAILURE); 
 	}
 	if (create_directory(WATER_DIR) == 0){
 		fprintf(stderr, "Impossible to create %s directory\n", WATER_DIR);
-		exit(-1);
+		free_directorys(dirs);
+        exit(EXIT_FAILURE); 
 	}
 
     wm = read_png_file("watermark.png");
 	if(wm == NULL){
 		fprintf(stderr, "Impossible to read %s image\n", "watermark.png");
-		exit(-1);
+		free_directorys(dirs);
+        exit(EXIT_FAILURE); 
 	}
     
     pthread_t* thread_id=(pthread_t*)malloc(n_threads*sizeof(pthread_t));

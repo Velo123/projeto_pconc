@@ -4,11 +4,11 @@ CFLAGS  = -Wall -pedantic -g -pthread -lpthread
 
 default: all
 
-all:main.o image-lib.o input.o
-	gcc $(CFLAGS) -o ap-paralelo-1 main.o image-lib.o input.o -lgd
+all:ap_paralelo1_main.o image-lib.o input.o
+	gcc $(CFLAGS) -o ap-paralelo-1 ap_paralelo1_main.o image-lib.o input.o -lgd
 
-main.o: main.c main.h
-	gcc  $(CFLAGS) -c main.c
+main.o: ap_paralelo1_main.c ap_paralelo1_main.h
+	gcc  $(CFLAGS) -c ap_paralelo1_main.c
 
 image-lib.o: image-lib.c image-lib.h
 	gcc  $(CFLAGS) -c image-lib.c

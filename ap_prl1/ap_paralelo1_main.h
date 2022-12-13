@@ -1,5 +1,5 @@
-#ifndef _main
-#define _main
+#ifndef ap_paralelo1_main
+#define ap_paralelo1_main
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
