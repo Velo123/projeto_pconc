@@ -87,32 +87,32 @@ void* rz_thread(void* arg){
         rszd_img=NULL;
 
         sprintf(outfilename,"%s%s",RESIZE_DIR,dirs[vl]);
-
-        if(wm_images_vector[vl]==NULL){
-            t=read_png_file(dirs[vl]);
-            if(t==NULL){
-                continue;
-            }
-            printf("criou by resize\n");
-            wm_img=add_watermark(t,wm);
-            pthread_mutex_lock(&mutex);
-            if (wm_images_vector[vl]==NULL){
-                wm_images_vector[vl]=wm_img;
-            }
-            else{
-                gdImageDestroy(wm_img);
-                wm_img=wm_images_vector[vl];
-            }
-            pthread_mutex_unlock(&mutex);
-            gdImageDestroy(t);
-        }
-        else
-            wm_img=wm_images_vector[vl];
-            
         if (access(outfilename,F_OK)!=-1){
             printf("%s encontrado\n",outfilename);
         }
         else{
+            if(wm_images_vector[vl]==NULL){
+                t=read_png_file(dirs[vl]);
+                if(t==NULL){
+                    vl++;
+                    continue;
+                }
+                printf("criou by resize\n");
+                wm_img=add_watermark(t,wm);
+                pthread_mutex_lock(&mutex);
+                if (wm_images_vector[vl]==NULL){
+                    wm_images_vector[vl]=wm_img;
+                }
+                else{
+                    gdImageDestroy(wm_img);
+                    wm_img=wm_images_vector[vl];
+                }
+                pthread_mutex_unlock(&mutex);
+                gdImageDestroy(t);
+            }
+            else
+                wm_img=wm_images_vector[vl];
+
             printf("%s não encontrado\n",outfilename);
             rszd_img=resize_image(wm_images_vector[vl],800);
             if(rszd_img==NULL){
@@ -137,10 +137,6 @@ void *wm_thread(void*arg){
     while(dirs[vl]!=NULL){
 
         wm_img=NULL;
-        t=read_png_file(dirs[vl]);
-        if(t==NULL){
-            continue;
-        }
         
         sprintf(outfilename,"%s%s",WATER_DIR,dirs[vl]);
 
@@ -148,6 +144,11 @@ void *wm_thread(void*arg){
             printf("%s encontrado\n",outfilename);
         }
         else{
+            t=read_png_file(dirs[vl]);
+            if(t==NULL){
+                vl++;
+                continue;
+            }
             printf("%s não encontrado\n",outfilename);
 
             if (wm_images_vector[vl]==NULL){
@@ -172,8 +173,8 @@ void *wm_thread(void*arg){
             if(write_png_file(wm_img,outfilename) == 0){
                 fprintf(stderr, "Impossible to write %s image\n", outfilename);
             }
+            gdImageDestroy(t);
         }
-        gdImageDestroy(t);
         vl++;
     }
     return NULL;
@@ -188,31 +189,32 @@ void *thumb_thread(void* arg){
         wm_img=NULL;
         thumb_img=NULL;
         sprintf(outfilename,"%s%s",THUMB_DIR,dirs[vl]);
-        if(wm_images_vector[vl]==NULL){
-            t=read_png_file(dirs[vl]);
-            if(t==NULL){
-                continue;
-            }
-            printf("criou by thumb\n");
-            wm_img=add_watermark(t,wm);
-            pthread_mutex_lock(&mutex);
-            if (wm_images_vector[vl]==NULL){
-                wm_images_vector[vl]=wm_img;
-            }
-            else{
-                gdImageDestroy(wm_img);
-                wm_img=wm_images_vector[vl];
-            }
-            pthread_mutex_unlock(&mutex);
-            gdImageDestroy(t);
-        }
-        else
-            wm_img=wm_images_vector[vl];
-            
         if (access(outfilename,F_OK)!=-1){
             printf("%s encontrado\n",outfilename);
         }
         else{
+            if(wm_images_vector[vl]==NULL){
+                t=read_png_file(dirs[vl]);
+                if(t==NULL){
+                    vl++;
+                    continue;
+                }
+                printf("criou by thumb\n");
+                wm_img=add_watermark(t,wm);
+                pthread_mutex_lock(&mutex);
+                if (wm_images_vector[vl]==NULL){
+                    wm_images_vector[vl]=wm_img;
+                }
+                else{
+                    gdImageDestroy(wm_img);
+                    wm_img=wm_images_vector[vl];
+                }
+                pthread_mutex_unlock(&mutex);
+                gdImageDestroy(t);
+            }
+            else
+                wm_img=wm_images_vector[vl];
+            
             printf("%s não encontrado\n",outfilename);
             thumb_img=make_thumb(wm_images_vector[vl],150);
             if(thumb_img==NULL){
@@ -223,6 +225,7 @@ void *thumb_thread(void* arg){
                 }
             }
             gdImageDestroy(thumb_img);
+
         }
         vl++;
     }
