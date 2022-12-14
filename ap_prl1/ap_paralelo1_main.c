@@ -6,12 +6,11 @@
 #define WATER_DIR "./Watermark-dir/"
 
 gdImagePtr wm;
-int v=0;
+int n_threads=0;
 char **dirs;
-pthread_mutex_t mutex;
+int n_probs=0;
 
 int main (int argc, char *argv[]){
-    pthread_mutex_init(&mutex,NULL);
     if(argc!=3){
         printf("Programa mal invocado\n");
         exit(EXIT_FAILURE);
@@ -19,7 +18,7 @@ int main (int argc, char *argv[]){
     if((dirs=input_directorys(argv[1]))==NULL){
         exit(EXIT_FAILURE);
     }
-    int n_threads=atoi(argv[2]);
+    n_threads=atoi(argv[2]);
     if(n_threads<1){
         printf("Numero de threads inferior a 1\n");
         free_directorys(dirs);
@@ -60,9 +59,11 @@ int main (int argc, char *argv[]){
         free_directorys(dirs);
         exit(EXIT_FAILURE);
     }
-    for (int i = 0; i < n_threads; i++)
+    for (n_probs=0;dirs[n_probs]!=NULL;n_probs++);
+
+    for (long int i = 0; i < n_threads; i++)
     {
-        pthread_create(&thread_id[i],NULL,ap1,NULL);
+        pthread_create(&thread_id[i],NULL,ap1,(void*)i);
     }
     for (int i = 0; i < n_threads; i++)
     {
@@ -71,24 +72,20 @@ int main (int argc, char *argv[]){
     gdImageDestroy(wm);
     free_directorys(dirs);
     free(thread_id);
-    pthread_mutex_destroy(&mutex);
 }
 
 void *ap1(void *arg){
     gdImagePtr t,rszd_img,thumb_img,wm_img;
     char outfilename[400];
-    int vl;
+    long int vl=(long int) arg;
 
 
-    while(dirs[v]!=NULL){
-        pthread_mutex_lock(&mutex);
-        vl=v;
-        v++;
-        pthread_mutex_unlock(&mutex);
+    while(vl<n_probs){
+        
         wm_img=NULL;
         rszd_img=NULL;
         thumb_img=NULL;
-        
+        printf("Thread %ld problem %ld\n",(long int)arg,vl);
         t=read_png_file(dirs[vl]);
         
         if(t==NULL){
@@ -156,6 +153,7 @@ void *ap1(void *arg){
         if (thumb_img!=NULL)
             gdImageDestroy(thumb_img);
         
+        vl+=n_threads;
     }
     return NULL;
 }
