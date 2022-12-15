@@ -24,7 +24,7 @@ int main (int argc, char *argv[]){
         exit(EXIT_FAILURE); 
     }
 
-    arg1=(char*)malloc(strlen(argv[1])+1);
+    arg1=(char*)malloc(strlen(argv[1])+2);
     strcpy(arg1,argv[1]);
     strcat(arg1,"/");
 
