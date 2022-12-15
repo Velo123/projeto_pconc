@@ -66,7 +66,6 @@ int main (int argc, char *argv[]){
 void* rz_thread(void* arg){
     gdImagePtr t,rszd_img,wm_img;
     char outfilename[400];
-    char wm_file[400];
     int vl=0;
     while(dirs[vl]!=NULL){
         wm_img=NULL;
@@ -77,30 +76,19 @@ void* rz_thread(void* arg){
             printf("%s encontrado\n",outfilename);
         }
         else{
-            sprintf(wm_file,"%s%s",WATER_DIR,dirs[vl]);
-            if(access(wm_file,F_OK)==-1){
-                t=read_png_file(dirs[vl]);
-                if(t==NULL){
-                    vl++;
-                    continue;
-                }
-                printf("criou by resize\n");
-                wm_img=add_watermark(t,wm);
-                if (wm_img == NULL){
-                    fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
-                    vl++;
-                    continue;
-                }
-                gdImageDestroy(t);
-            }
-            else{
-                wm_img=read_png_file(wm_file);
-                if(wm_img==NULL){
-                    vl++;
-                    continue;
-                }
-            }
             printf("%s não encontrado\n",outfilename);
+            t=read_png_file(dirs[vl]);
+            if(t==NULL){
+                vl++;
+                continue;
+            }
+            wm_img=add_watermark(t,wm);
+            if (wm_img == NULL){
+                fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
+                vl++;
+                continue;
+            }
+            gdImageDestroy(t);
             rszd_img=resize_image(wm_img,800);
             if(rszd_img==NULL){
                 fprintf(stderr, "Impossible to creat resize of %s image\n", dirs[vl]);
@@ -159,7 +147,6 @@ void *wm_thread(void*arg){
 void *thumb_thread(void* arg){
     gdImagePtr t,thumb_img,wm_img;
     char outfilename[400];
-    char wm_file[400];
     int vl=0;   
      while(dirs[vl]!=NULL){
         wm_img=NULL;
@@ -169,30 +156,19 @@ void *thumb_thread(void* arg){
             printf("%s encontrado\n",outfilename);
         }
         else{
-            sprintf(wm_file,"%s%s",WATER_DIR,dirs[vl]);
-            if(access(wm_file,F_OK)==-1){
-                t=read_png_file(dirs[vl]);
-                if(t==NULL){
-                    vl++;
-                    continue;
-                }
-                printf("criou by thumb\n");
-                wm_img=add_watermark(t,wm);
-                if (wm_img == NULL){
-                    fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
-                    vl++;
-                    continue;
-                }
-                gdImageDestroy(t);
-            }
-            else{
-                wm_img=read_png_file(wm_file);
-                if(wm_img==NULL){
-                    vl++;
-                    continue;
-                }
-            }
             printf("%s não encontrado\n",outfilename);
+            t=read_png_file(dirs[vl]);
+            if(t==NULL){
+                vl++;
+                continue;
+            }
+            wm_img=add_watermark(t,wm);
+            if (wm_img == NULL){
+                fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
+                vl++;
+                continue;
+            }
+            gdImageDestroy(t);
             thumb_img=make_thumb(wm_img,150);
             if(thumb_img==NULL){
                 fprintf(stderr, "Impossible to creat thumb of %s image\n", dirs[vl]);

@@ -8,7 +8,7 @@
  * 
  * Returns: vector de strings com os diretorios de todas as imagens a resolver com o ultimo endereço de 
  *          string a nulo
- * Side-Effects: none
+ * Side-Effects: Aloca memória para guardadar os dirétorios
  *
  * Description: esta função lê todo o ficheiro de diretorios conta o numero de diretorios existentes
  *              válidos e guarda-os num vetor de diretórios que retorna
@@ -60,7 +60,17 @@ char** input_directorys(char* filename){
     fclose(fin);
     return directorys;
 }
-
+/******************************************************************************
+ * free_directorys()
+ *
+ * Arguments: directorys-vetor de strings com diretorios guardados criado pela função input_directorys
+ * 
+ * Returns: none
+ * Side-Effects: liberta toda a memória do vetor incluido o proprio vetor
+ *
+ * Description: esta função liberta toda a memória do vetor diretoŕios enviado;
+ *
+ *****************************************************************************/
 void free_directorys(char** directorys){
     int i;
     for (i=0;directorys[i]!=NULL;i++)
