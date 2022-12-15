@@ -15,9 +15,11 @@
  *
  *****************************************************************************/
 
-char** input_directorys(char* filename){
-    char directory[700],**directorys;
+char** input_directorys(char* filename1){
+    char directory[700],**directorys,filename[700];
     int n_images=0,i=0;
+    strcpy(filename,filename1);
+    strcat(filename,"/image-list.txt");
     FILE *fin=fopen(filename,"r");
     //comfirma a existencia do ficheiro
     if (fin==NULL){
@@ -33,16 +35,14 @@ char** input_directorys(char* filename){
     }
     
     fseek(fin,0,SEEK_SET);
-    //Aloca a memória nesseçária para guardar todos os diretorios 
+
     directorys=(char**)malloc((n_images+1)*sizeof(char*));
     if (directorys==NULL){
         fclose(fin);
         return NULL;
     }
-    //marca a ultima casa do vetor a nulo
     directorys[n_images]=NULL;
-
-    ///percorre todo o ficheiro de novo e guarda os dirétorios válidos
+    
     while (!feof(fin)){
         fscanf(fin,"%s\n",directory);
         if(strstr(directory,".png")==NULL || strcmp(directory,"watermark.png")==0)
