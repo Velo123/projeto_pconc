@@ -7,6 +7,7 @@
 #include"pthread.h"
 #include"gd.h"
 
+
 char** input_directorys(char* filename1);
 void free_directorys(char** directorys);
 

@@ -1,21 +1,37 @@
-#include "ap_paralelo2_main.h"
+#include "ap_paralelo3_main.h"
+
+typedef struct _data{
+    gdImagePtr image;
+    char location[400];
+}data;
+
 
 gdImagePtr wm;
+int ***pipe_matrix;
 char **dirs;
 char* RESIZE_DIR;
 char* WATER_DIR;
 char* THUMB_DIR;
 char* arg1;
+pthread_mutex_t mutex;
+int v=0;
 
 int main (int argc, char *argv[]){
-    pthread_t thread_id[3];
+    int n_threads=0;
+
+    pthread_t** thread_id;
     //verificar invocação do programa
-    if(argc!=2){
+    if(argc!=3){
+        printf("Programa mal invocado\n");
+        exit(EXIT_FAILURE);
+    }
+    n_threads=atoi(argv[1]);
+    if(n_threads<1){
         printf("Programa mal invocado\n");
         exit(EXIT_FAILURE);
     }
     //dar input aos nomes das imagens
-    if((dirs=input_directorys(argv[1]))==NULL){
+    if((dirs=input_directorys(argv[2]))==NULL){
         exit(EXIT_FAILURE);
     } 
     if (dirs[0]==NULL){
@@ -24,13 +40,83 @@ int main (int argc, char *argv[]){
         exit(EXIT_FAILURE); 
     }
 
-    arg1=(char*)malloc(strlen(argv[1])+2);
-    strcpy(arg1,argv[1]);
+    thread_id=(pthread_t**)malloc(sizeof(pthread_t*)*n_threads);
+    if (thread_id==NULL)
+    {
+        printf("Erro na alocação 1\n");
+        free_directorys(dirs);
+        exit(EXIT_FAILURE); 
+    }
+    
+    for (int i = 0; i < n_threads; i++)
+    {
+        thread_id[i]=(pthread_t*)malloc(sizeof(pthread_t)*3);
+        if (thread_id[i]==NULL)
+        {
+            printf("Erro na alocação 2\n");
+            free(thread_id);
+            free_directorys(dirs);
+            exit(EXIT_FAILURE); 
+        }
+    }
+    
+    pipe_matrix=(int***)malloc(sizeof(int**)*n_threads);
+    if (pipe_matrix==NULL)
+    {
+        printf("Erro na alocação 3\n");
+        for (int i = 0; i < n_threads; i++)
+        {
+            free(thread_id[i]);
+        }
+        free(thread_id);
+        free_directorys(dirs);
+        exit(EXIT_FAILURE); 
+    }
+    for (int i = 0; i < n_threads; i++)
+    {
+        pipe_matrix[i]=(int**)malloc(sizeof(int*)*2);
+        if (pipe_matrix[i]==NULL)
+        {
+            printf("Erro na alocação 4\n");
+            for (int k = 0; k < n_threads; k++)
+            {
+                free(thread_id[k]);
+            }
+            free(pipe_matrix);
+            free(thread_id);
+            free_directorys(dirs);
+            exit(EXIT_FAILURE); 
+        }
+        for (int j = 0; j < 2; j++)
+        {
+            pipe_matrix[i][j]=(int*)malloc(sizeof(int)*2);
+            if (pipe_matrix[i][j]==NULL)
+            {
+                printf("Erro na alocação 5\n");
+                for (int k = 0; k < n_threads; i++)
+                {
+                    free(thread_id[i]);
+                }
+                for (int k = 0; k < n_threads; i++)
+                {
+                    free(pipe_matrix[i]);
+                }
+                free(pipe_matrix);
+                free(thread_id);
+                free_directorys(dirs);
+                exit(EXIT_FAILURE); 
+            }
+            pipe(pipe_matrix[i][j]);
+        }
+    }
+    
+    arg1=(char*)malloc(strlen(argv[2])+2);
+    strcpy(arg1,argv[2]);
     strcat(arg1,"/");
 
 
-    RESIZE_DIR=(char*)malloc(strlen(argv[1])+14);
-    strcpy(RESIZE_DIR,argv[1]);
+    RESIZE_DIR=(char*)malloc(strlen(argv[2])+14);
+    strcpy(RESIZE_DIR,argv[2]);
     strcat(RESIZE_DIR,"/Resize-dir/");
 	// creation of output directories 
 	if (create_directory(RESIZE_DIR) == 0){
@@ -39,16 +125,16 @@ int main (int argc, char *argv[]){
         exit(EXIT_FAILURE); 
 	}
 
-    THUMB_DIR=(char*)malloc(strlen(argv[1])+17);
-    strcpy(THUMB_DIR,argv[1]);
+    THUMB_DIR=(char*)malloc(strlen(argv[2])+17);
+    strcpy(THUMB_DIR,argv[2]);
     strcat(THUMB_DIR,"/Thumbnail-dir/");
 	if (create_directory(THUMB_DIR) == 0){
 		fprintf(stderr, "Impossible to create %s directory\n", THUMB_DIR);
 		free_directorys(dirs);
         exit(EXIT_FAILURE); 
 	}
-    WATER_DIR=(char*)malloc(strlen(argv[1])+17);
-    strcpy(WATER_DIR,argv[1]);
+    WATER_DIR=(char*)malloc(strlen(argv[2])+17);
+    strcpy(WATER_DIR,argv[2]);
     strcat(WATER_DIR,"/Watermark-dir/");
 	if (create_directory(WATER_DIR) == 0){
 		fprintf(stderr, "Impossible to create %s directory\n", WATER_DIR);
@@ -57,7 +143,7 @@ int main (int argc, char *argv[]){
 	}
     //ler watermark
     char wm_loc[700];
-    strcpy(wm_loc,argv[1]);
+    strcpy(wm_loc,argv[2]);
     strcat(wm_loc,"/watermark.png");
     wm = read_png_file(wm_loc);
 	if(wm == NULL){
@@ -65,16 +151,34 @@ int main (int argc, char *argv[]){
 		free_directorys(dirs);
         exit(EXIT_FAILURE); 
 	}
+    pthread_mutex_init(&mutex,NULL);
+    //criar todas as threads necessárias
+    for (long int i = 0; i < n_threads; i++)
+    {
+        pthread_create(&thread_id[i][0],NULL,wm_thread,(void*)i);
+        pthread_create(&thread_id[i][1],NULL,thumb_thread,(void*)i);
+        pthread_create(&thread_id[i][2],NULL,rz_thread,(void*)i);
+    }
+    for (int i = 0; i < n_threads; i++)
+    {
+        pthread_join(thread_id[i][0], NULL);
+        pthread_join(thread_id[i][1], NULL);
+        pthread_join(thread_id[i][2], NULL);
+    }
     
-        
-    //criar as 3 threads e esperar que todas acabem
-    pthread_create(&thread_id[1],NULL,thumb_thread,NULL);
-    pthread_create(&thread_id[2],NULL,rz_thread,NULL);
-    pthread_create(&thread_id[0],NULL,wm_thread,NULL);
-    pthread_join(thread_id[0], NULL);
-    pthread_join(thread_id[1], NULL);
-    pthread_join(thread_id[2], NULL);
     //libertar memoria
+    for (int i = 0; i < n_threads; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            free(pipe_matrix[i][j]);
+        }
+        free(pipe_matrix[i]);
+        free(thread_id[i]);
+    }
+    free(thread_id);
+    free(pipe_matrix);
+    pthread_mutex_destroy(&mutex);
     gdImageDestroy(wm);
     free_directorys(dirs);
     free(WATER_DIR);
@@ -99,39 +203,30 @@ int main (int argc, char *argv[]){
  *
  *****************************************************************************/
 void* rz_thread(void* arg){
-    gdImagePtr t,rszd_img,wm_img;
+    gdImagePtr rszd_img;
     char outfilename[400];
-    int vl=0;
     char infile[700];
-    while(dirs[vl]!=NULL){
-        wm_img=NULL;
+    int argl=(long int)arg;
+    data pipe_info;
+    while(1){
+        read(pipe_matrix[argl][1][0],&pipe_info,sizeof(data));
+        if (pipe_info.image==NULL)
+            break;
         rszd_img=NULL;
         strcpy(infile,arg1);
-        strcat(infile,dirs[vl]);
-        sprintf(outfilename,"%s%s",RESIZE_DIR,dirs[vl]); 
+        strcat(infile,pipe_info.location);
+        sprintf(outfilename,"%s%s",RESIZE_DIR,pipe_info.location); 
         //verificar se já existe o ficheiro
         if (access(outfilename,F_OK)!=-1){
             printf("%s encontrado\n",outfilename);
         }
         else{
             printf("%s não encontrado\n",outfilename);
-            //colocar watermark
-            t=read_png_file(infile);  
-            if(t==NULL){
-                vl++;
-                continue;
-            }
-            wm_img=add_watermark(t,wm);
-            if (wm_img == NULL){
-                fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
-                vl++;
-                continue;
-            }
-            gdImageDestroy(t);
+            
             //fazer resize
-            rszd_img=resize_image(wm_img,800);
+            rszd_img=resize_image(pipe_info.image,800);
             if(rszd_img==NULL){
-                fprintf(stderr, "Impossible to creat resize of %s image\n", dirs[vl]);
+                fprintf(stderr, "Impossible to creat resize of %s image\n", pipe_info.location);
             }else{
                 if(write_png_file(rszd_img,outfilename) == 0){
                     fprintf(stderr, "Impossible to write %s image\n", outfilename);
@@ -139,9 +234,8 @@ void* rz_thread(void* arg){
             }
             //libertar memoria
             gdImageDestroy(rszd_img);
-            gdImageDestroy(wm_img);
         }
-        vl++;
+        gdImageDestroy(pipe_info.image);
     }
     return NULL;
 }
@@ -166,8 +260,14 @@ void *wm_thread(void*arg){
     char outfilename[400];
     int vl=0;
     char infile[700];
-    while(dirs[vl]!=NULL){
-
+    data pipe_info;
+    int argl=(long int)arg;
+    
+    while(dirs[v]!=NULL){
+        pthread_mutex_lock(&mutex);
+        vl=v;
+        v++;
+        pthread_mutex_unlock(&mutex);
         wm_img=NULL;
         strcpy(infile,arg1);
         strcat(infile,dirs[vl]);
@@ -175,12 +275,12 @@ void *wm_thread(void*arg){
 
         if (access(outfilename,F_OK)!=-1){  //verificar se já existe
             printf("%s encontrado\n",outfilename);
+            wm_img=read_png_file(infile);
         }
         else{
             //adicionar watermark
             t=read_png_file(infile);
             if(t==NULL){
-                vl++;
                 continue;
             }
             printf("%s não encontrado\n",outfilename);
@@ -196,10 +296,14 @@ void *wm_thread(void*arg){
             }
             //libertar memoria
             gdImageDestroy(t);
-            gdImageDestroy(wm_img);
         }
-        vl++;
+        pipe_info.image=wm_img;
+        strcpy(pipe_info.location,dirs[vl]);
+        write(pipe_matrix[argl][0][1],&pipe_info,sizeof(data));
     }
+    pipe_info.image=NULL;
+    write(pipe_matrix[argl][0][1],&pipe_info,sizeof(data));
+
     return NULL;
 }
 
@@ -220,39 +324,28 @@ void *wm_thread(void*arg){
 
 
 void *thumb_thread(void* arg){
-    gdImagePtr t,thumb_img,wm_img;
+    gdImagePtr thumb_img;
     char outfilename[400];
-    int vl=0;   
     char infile[700];
-     while(dirs[vl]!=NULL){
-        wm_img=NULL;
+    int argl=(long int) arg;
+    data pipeinfo;
+    while(1){
+        read(pipe_matrix[argl][0][0],&pipeinfo,sizeof(data));
+        if (pipeinfo.image==NULL)
+            break;
         thumb_img=NULL;
         strcpy(infile,arg1);
-        strcat(infile,dirs[vl]);
-        sprintf(outfilename,"%s%s",THUMB_DIR,dirs[vl]);
-        //verificar se o ficheiro existe
+        strcat(infile,pipeinfo.location);
+        sprintf(outfilename,"%s%s",THUMB_DIR,pipeinfo.location);
         if (access(outfilename,F_OK)!=-1){
             printf("%s encontrado\n",outfilename);
         }
         else{
-            //adicionar watermark
             printf("%s não encontrado\n",outfilename);
-            t=read_png_file(infile);
-            if(t==NULL){
-                vl++;
-                continue;
-            }
-            wm_img=add_watermark(t,wm);
-            if (wm_img == NULL){
-                fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
-                vl++;
-                continue;
-            }
-            gdImageDestroy(t);
             //criar thumbnail
-            thumb_img=make_thumb(wm_img,150);
+            thumb_img=make_thumb(pipeinfo.image,150);
             if(thumb_img==NULL){
-                fprintf(stderr, "Impossible to creat thumb of %s image\n", dirs[vl]);
+                fprintf(stderr, "Impossible to creat thumb of %s image\n", pipeinfo.location);
             }else{
                 if(write_png_file(thumb_img,outfilename) == 0){
                     fprintf(stderr, "Impossible to write %s image\n", outfilename);
@@ -260,10 +353,10 @@ void *thumb_thread(void* arg){
             }
             //libertar memoria
             gdImageDestroy(thumb_img);
-            gdImageDestroy(wm_img);
-
         }
-        vl++;
+        write(pipe_matrix[argl][1][1],&pipeinfo,sizeof(data));
     }
+    pipeinfo.image=NULL;
+    write(pipe_matrix[argl][1][1],&pipeinfo,sizeof(data));
     return NULL;
 }
