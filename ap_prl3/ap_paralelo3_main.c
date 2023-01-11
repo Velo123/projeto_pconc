@@ -1,4 +1,6 @@
 #include "ap_paralelo3_main.h"
+#define MAX_LEN 400
+
 
 typedef struct _data{
     gdImagePtr image;
@@ -7,13 +9,14 @@ typedef struct _data{
 
 
 gdImagePtr wm;
-int ***pipe_matrix;
+int pipewm[2];
+int pipethumb[2];
+int piperez[2];
 char **dirs;
 char* RESIZE_DIR;
 char* WATER_DIR;
 char* THUMB_DIR;
 char* arg1;
-pthread_mutex_t mutex;
 int v=0;
 
 int main (int argc, char *argv[]){
@@ -47,7 +50,7 @@ int main (int argc, char *argv[]){
         free_directorys(dirs);
         exit(EXIT_FAILURE); 
     }
-    
+
     for (int i = 0; i < n_threads; i++)
     {
         thread_id[i]=(pthread_t*)malloc(sizeof(pthread_t)*3);
@@ -59,57 +62,10 @@ int main (int argc, char *argv[]){
             exit(EXIT_FAILURE); 
         }
     }
-    
-    pipe_matrix=(int***)malloc(sizeof(int**)*n_threads);
-    if (pipe_matrix==NULL)
-    {
-        printf("Erro na alocação 3\n");
-        for (int i = 0; i < n_threads; i++)
-        {
-            free(thread_id[i]);
-        }
-        free(thread_id);
-        free_directorys(dirs);
-        exit(EXIT_FAILURE); 
-    }
-    for (int i = 0; i < n_threads; i++)
-    {
-        pipe_matrix[i]=(int**)malloc(sizeof(int*)*2);
-        if (pipe_matrix[i]==NULL)
-        {
-            printf("Erro na alocação 4\n");
-            for (int k = 0; k < n_threads; k++)
-            {
-                free(thread_id[k]);
-            }
-            free(pipe_matrix);
-            free(thread_id);
-            free_directorys(dirs);
-            exit(EXIT_FAILURE); 
-        }
-        for (int j = 0; j < 2; j++)
-        {
-            pipe_matrix[i][j]=(int*)malloc(sizeof(int)*2);
-            if (pipe_matrix[i][j]==NULL)
-            {
-                printf("Erro na alocação 5\n");
-                for (int k = 0; k < n_threads; i++)
-                {
-                    free(thread_id[i]);
-                }
-                for (int k = 0; k < n_threads; i++)
-                {
-                    free(pipe_matrix[i]);
-                }
-                free(pipe_matrix);
-                free(thread_id);
-                free_directorys(dirs);
-                exit(EXIT_FAILURE); 
-            }
-            pipe(pipe_matrix[i][j]);
-        }
-    }
-    
+    pipe(pipewm);
+    pipe(pipethumb);
+    pipe(piperez);
+
     arg1=(char*)malloc(strlen(argv[2])+2);
     strcpy(arg1,argv[2]);
     strcat(arg1,"/");
@@ -151,14 +107,27 @@ int main (int argc, char *argv[]){
 		free_directorys(dirs);
         exit(EXIT_FAILURE); 
 	}
-    pthread_mutex_init(&mutex,NULL);
     //criar todas as threads necessárias
     for (long int i = 0; i < n_threads; i++)
     {
-        pthread_create(&thread_id[i][0],NULL,wm_thread,(void*)i);
-        pthread_create(&thread_id[i][1],NULL,thumb_thread,(void*)i);
-        pthread_create(&thread_id[i][2],NULL,rz_thread,(void*)i);
+        pthread_create(&thread_id[i][0],NULL,wm_thread,NULL);
+        pthread_create(&thread_id[i][1],NULL,thumb_thread,NULL);
+        pthread_create(&thread_id[i][2],NULL,rz_thread,NULL);
     }
+
+    //escrever nomes das imagens nos pipes
+    for (int i = 0; dirs[i]!=NULL ; i++)
+    {
+        write(pipewm[1],dirs[i],MAX_LEN*sizeof(char));
+    }
+
+    //escrever fim de ficheiros
+    for (int i = 0; i < n_threads; i++)
+    {
+        write(pipewm[1],"",MAX_LEN*sizeof(char));
+    }
+    
+    //esperar que todas as threads terminem
     for (int i = 0; i < n_threads; i++)
     {
         pthread_join(thread_id[i][0], NULL);
@@ -169,16 +138,9 @@ int main (int argc, char *argv[]){
     //libertar memoria
     for (int i = 0; i < n_threads; i++)
     {
-        for (int j = 0; j < 2; j++)
-        {
-            free(pipe_matrix[i][j]);
-        }
-        free(pipe_matrix[i]);
         free(thread_id[i]);
     }
     free(thread_id);
-    free(pipe_matrix);
-    pthread_mutex_destroy(&mutex);
     gdImageDestroy(wm);
     free_directorys(dirs);
     free(WATER_DIR);
@@ -206,10 +168,9 @@ void* rz_thread(void* arg){
     gdImagePtr rszd_img;
     char outfilename[400];
     char infile[700];
-    int argl=(long int)arg;
     data pipe_info;
     while(1){
-        read(pipe_matrix[argl][1][0],&pipe_info,sizeof(data));
+        read(piperez[0],&pipe_info,sizeof(data));
         if (pipe_info.image==NULL)
             break;
         rszd_img=NULL;
@@ -258,24 +219,22 @@ void* rz_thread(void* arg){
 void *wm_thread(void*arg){
     gdImagePtr t,wm_img;
     char outfilename[400];
-    int vl=0;
     char infile[700];
+    char fileinput[MAX_LEN];
     data pipe_info;
-    int argl=(long int)arg;
     
-    while(dirs[v]!=NULL){
-        pthread_mutex_lock(&mutex);
-        vl=v;
-        v++;
-        pthread_mutex_unlock(&mutex);
+    while(1){
+        read(pipewm[0],&fileinput,sizeof(char)*MAX_LEN);
+        if (strlen(fileinput)==0)
+            break;
         wm_img=NULL;
         strcpy(infile,arg1);
-        strcat(infile,dirs[vl]);
-        sprintf(outfilename,"%s%s",WATER_DIR,dirs[vl]);
+        strcat(infile,fileinput);
+        sprintf(outfilename,"%s%s",WATER_DIR,fileinput);
 
         if (access(outfilename,F_OK)!=-1){  //verificar se já existe
             printf("%s encontrado\n",outfilename);
-            wm_img=read_png_file(infile);
+            wm_img=read_png_file(outfilename);
         }
         else{
             //adicionar watermark
@@ -287,7 +246,7 @@ void *wm_thread(void*arg){
 
             wm_img=add_watermark(t,wm);
             if (wm_img == NULL){
-                fprintf(stderr, "Impossible to creat watermark of %s image\n", dirs[vl]);
+                fprintf(stderr, "Impossible to creat watermark of %s image\n", fileinput);
                 continue;
             }
             //criar ficheiro
@@ -298,11 +257,11 @@ void *wm_thread(void*arg){
             gdImageDestroy(t);
         }
         pipe_info.image=wm_img;
-        strcpy(pipe_info.location,dirs[vl]);
-        write(pipe_matrix[argl][0][1],&pipe_info,sizeof(data));
+        strcpy(pipe_info.location,fileinput);
+        write(pipethumb[1],&pipe_info,sizeof(data));
     }
     pipe_info.image=NULL;
-    write(pipe_matrix[argl][0][1],&pipe_info,sizeof(data));
+    write(pipethumb[1],&pipe_info,sizeof(data));
 
     return NULL;
 }
@@ -327,10 +286,9 @@ void *thumb_thread(void* arg){
     gdImagePtr thumb_img;
     char outfilename[400];
     char infile[700];
-    int argl=(long int) arg;
     data pipeinfo;
     while(1){
-        read(pipe_matrix[argl][0][0],&pipeinfo,sizeof(data));
+        read(pipethumb[0],&pipeinfo,sizeof(data));
         if (pipeinfo.image==NULL)
             break;
         thumb_img=NULL;
@@ -354,9 +312,9 @@ void *thumb_thread(void* arg){
             //libertar memoria
             gdImageDestroy(thumb_img);
         }
-        write(pipe_matrix[argl][1][1],&pipeinfo,sizeof(data));
+        write(piperez[1],&pipeinfo,sizeof(data));
     }
     pipeinfo.image=NULL;
-    write(pipe_matrix[argl][1][1],&pipeinfo,sizeof(data));
+    write(piperez[1],&pipeinfo,sizeof(data));
     return NULL;
 }
