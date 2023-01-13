@@ -262,10 +262,10 @@ void *wm_thread(void*arg){
         //escrever pipe
         pipe_info.image=wm_img;
         pipe_info.location=vl;
-        write(piperez[1],&pipe_info,sizeof(data));
+        write(pipethumb[1],&pipe_info,sizeof(data));
     }
     pipe_info.location=-1;
-    write(piperez[1],&pipe_info,sizeof(data));
+    write(pipethumb[1],&pipe_info,sizeof(data));
 
     return NULL;
 }
@@ -284,7 +284,6 @@ void *wm_thread(void*arg){
  * 
  *
  *****************************************************************************/
-
 
 void *thumb_thread(void* arg){
     return NULL;
