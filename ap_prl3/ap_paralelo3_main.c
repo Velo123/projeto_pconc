@@ -199,8 +199,10 @@ void* rz_thread(void* arg){
             //libertar memoria
             gdImageDestroy(rszd_img);
         }
-        gdImageDestroy(pipe_info.image);
+        write(pipethumb[1],&pipe_info,sizeof(data));
     }
+    pipe_info.image=NULL;
+    write(pipethumb[1],&pipe_info,sizeof(data));
     return NULL;
 }
 
@@ -225,7 +227,6 @@ void *wm_thread(void*arg){
     char infile[700];
     int vl=0;
     data pipe_info;
-    
     while(1){
         //ler pipe
         read(pipewm[0],&vl,sizeof(int));
@@ -262,11 +263,10 @@ void *wm_thread(void*arg){
         //escrever pipe
         pipe_info.image=wm_img;
         pipe_info.location=vl;
-        write(pipethumb[1],&pipe_info,sizeof(data));
+        write(piperez[1],&pipe_info,sizeof(data));
     }
     pipe_info.location=-1;
-    write(pipethumb[1],&pipe_info,sizeof(data));
-
+    write(piperez[1],&pipe_info,sizeof(data));
     return NULL;
 }
 
@@ -286,7 +286,6 @@ void *wm_thread(void*arg){
  *****************************************************************************/
 
 void *thumb_thread(void* arg){
-    return NULL;
     gdImagePtr thumb_img;
     char outfilename[400];
     char infile[700];
@@ -317,9 +316,7 @@ void *thumb_thread(void* arg){
             //libertar memoria
             gdImageDestroy(thumb_img);
         }
-        write(piperez[1],&pipeinfo,sizeof(data));
+        gdImageDestroy(pipeinfo.image);
     }
-    pipeinfo.image=NULL;
-    write(piperez[1],&pipeinfo,sizeof(data));
     return NULL;
 }
